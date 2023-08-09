@@ -1,0 +1,82 @@
+---
+title: "Heart Disease Data Exploration"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# 1. Introduction and Data Preparation
+
+As the largest single cause of death on the planet, heart disease is an important and life or death matter. With increasing number of people of being diagnosed of heart disease all over the world, it is paramount to study the symptoms correlates with the disease as well as identify the population that is susceptible to this kind of disease for early prevention. The dataset is collected from this website (https://gmudatamining.com/data/heart_disease.rds). Before creating the plot, the data values of type string are formatted, and the variable names are fixed ahead of time for better layout in legends and labels. <br>
+
+# 2. Figure Description and Analysis
+
+In the Figure 1, the density plot and histogram of the resting blood pressure is shown faceted by different types of Thalassemia. The first row is the patients with heart disease while the second row is the patients without heart disease. The distribution of blood pressure varies among the three types of Thalassemia, and this might imply that Thalassemia correlated with resting blood pressure. For patients with reversible defect Thalassemia, much more patients with heart disease tend to have blood pressure around 130 than patients without heart disease, and the distributions of blood pressure are both skewed to the right.   <br>
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+heart_df <- read_rds(url('https://gmudatamining.com/data/heart_disease.rds'))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+df = heart_df %>%
+  rename(`Heart Disease` = heart_disease,
+         `Resting Blood Pressure` = resting_blood_pressure,
+         `Chest Pain` = chest_pain)
+levels(df$`Heart Disease`)[levels(df$`Heart Disease`)
+                           =="yes"] <- "Have Heart Disease"
+levels(df$`Heart Disease`)[levels(df$`Heart Disease`)
+                           =="no"] <- "Not Have Heart Disease"
+levels(df$thalassemia)[levels(df$thalassemia)
+                           =="normal"] <- "Normal"
+levels(df$thalassemia)[levels(df$thalassemia)
+                           =="fixed_defect"] <- "Fixed Defect"
+levels(df$thalassemia)[levels(df$thalassemia)
+                           =="reversible_defect"] <- "Reversible Defect" 
+levels(df$`Chest Pain`)[levels(df$`Chest Pain`)
+                           =="typical"] = "Typical"
+levels(df$`Chest Pain`)[levels(df$`Chest Pain`)
+                           =="atypical"] = "Atypical"
+levels(df$`Chest Pain`)[levels(df$`Chest Pain`)
+                           =="non_anginal"] = "Non-anginal"
+levels(df$`Chest Pain`)[levels(df$`Chest Pain`)
+                           =="asymptomatic"] = "Asymptomatic"
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(data = df, 
+       mapping = aes(x = `Resting Blood Pressure`, 
+                     fill = `Heart Disease`)) +
+  geom_histogram(aes(y=..density..), color = "white", 
+                 bins = 15)+
+  geom_density(lwd = 1, colour = 4,
+               fill = 4, alpha = 0.25)+
+  facet_grid(`Heart Disease` ~ thalassemia) +
+  labs(title = "Distribution of Resting Blood Pressure\n Faceted by Thalassemia",
+       x = "Resting Blood Pressure",
+       y = "Percentage of Total Patients")+
+  theme_minimal()+
+  theme(plot.title = element_text(size=20, face="bold", 
+    margin = margin(10, 0, 10, 0)),
+    axis.text.x=element_text(angle=50, size=10, vjust=0.8),
+    legend.position = "none")
+```
+Figure 2 is a scatterplot with age as the x axis and cholesterol as the y axis, faceted by whether the patient has heart disease. For each data point, the different colors represent different types of chest pain, while different shapes demonstrate different resting blood pressure. According to the plot, it is easy to conclude that most of patients who have heart disease experience asymptomatic chest pain in contrast with patients without heart disease, which is quite unexpected. Intuitively, heart disease should cause uncomfortable feelings in chest where the heart lies, but the asymptomatic chest pain makes heart disease even harder to detect in the early stage and increase the risks of having side effects from heart disease. Comparatively, patients without heart disease experience diverse types of chest pain, and a larger proportion experience atypical and non-anginal chest pain than patients with heart disease. In terms of age, most of patients being diagnosed of the disease are around 60 years old, while the age of patients without the disease are much more scattered. Most people with the disease tend to have cholesterol level of around 200 to 300. There is no apparent relation between resting blood pressure and the disease from the figure. <br>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(df,
+       aes(x=age, y=cholesterol,color = `Chest Pain`,
+             size = `Resting Blood Pressure`)) +
+  geom_point(alpha = 0.5) +
+  facet_grid(.~ `Heart Disease`)+
+  theme_minimal()+ 
+  scale_color_brewer(palette="Dark2")+
+  labs(title = "Scatterplot of Heart Disease in Relation to Age,\n Cholesterol, Chest Pain, Resting Blood Pressure",
+       x = "Age",
+       y = "Cholesterol")+
+  theme(plot.title = element_text(size=15, face="bold", 
+    margin = margin(10, 0, 10, 0)),
+    axis.text.x=element_text(angle=50, size=10, vjust=0.8))
+```
+
+

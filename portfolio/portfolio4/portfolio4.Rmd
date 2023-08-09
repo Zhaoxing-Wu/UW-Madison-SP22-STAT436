@@ -1,0 +1,95 @@
+---
+title: "Heart Disease Data Exploration"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r setup}
+library(tidyverse)
+library(ggridges)
+library(patchwork)
+heart_df = readRDS(url('https://gmudatamining.com/data/heart_disease.rds', "rb"))
+```
+
+```{r}
+#reset variable names and categorical level names
+df = heart_df %>%
+  rename(`Heart Disease` = heart_disease,
+         `Resting Blood Pressure` = resting_blood_pressure,
+         `Chest Pain` = chest_pain)
+levels(df$`Heart Disease`) = c("Have Heart Disease", "Not Have Heart Disease")
+levels(df$thalassemia) = c("Normal", "Fixed Defect", "Reversible Defect")
+levels(df$`Chest Pain`) = c("Typical", "Atypical", "Non-anginal", "Asymptomatic")
+levels(df$resting_electrocardiograph) = c("Normal", "ST-T Wave Abnormal", "Ventricular Hypertrophy")
+```
+
+```{r}
+violin = function(y, ylab){
+  ggplot(df, aes(x = `Heart Disease`, y = y, fill = `Heart Disease`)) +
+    geom_violin(width=1, col = "white") + 
+    geom_boxplot(width=0.1, color="grey", alpha=0.2)+
+    xlab("")+
+    ylab(ylab)+
+    theme_minimal() +
+    theme(axis.text.x=element_blank())
+}
+p2 = violin(df$age, "Age")
+p3 = violin(df$max_heart_rate, "Max heart rate")
+p4 = violin(df$cholesterol, "Cholesterol")
+p5 = violin(df$old_peak, "Old peak")
+p2+p3+p4+p5+
+       plot_layout(guides = "collect") &
+       plot_annotation(theme = theme(legend.position = "right"), 
+                       title = "Violin Plots of Age, Max Heart Rate, Cholesterol, and Old Peak")
+```
+
+```{r}
+ggplot(df, aes(x = cholesterol, y =  resting_electrocardiograph, fill = `Heart Disease`)) +
+  geom_density_ridges(alpha = 0.7, col = "grey") +
+  theme_minimal()+
+  labs(x = "Cholesterol", y = "Resting Electrocardiogram",
+       title = "Density Plot of Cholesterol in Relation to Resting\n Electrocardiogram")+
+  theme(plot.title = element_text(size=15, face="bold"))
+```
+
+
+```{r}
+ggplot(data = df, 
+       mapping = aes(x = `Resting Blood Pressure`, 
+                     fill = `Heart Disease`)) +
+  geom_histogram(aes(y=..density..), color = "white", 
+                 bins = 15)+
+  geom_density(lwd = 1, colour = 4,
+               fill = 4, alpha = 0.25)+
+  facet_grid(`Heart Disease` ~ `Chest Pain`) +
+  labs(title = "Distribution of Resting Blood Pressure\n Faceted by Chest Pain",
+       x = "Resting Blood Pressure",
+       y = "Percentage of Total Patients")+
+  theme_minimal()+
+  theme(plot.title = element_text(size=20, face="bold", 
+    margin = margin(10, 0, 10, 0)),
+    axis.text.x=element_text(angle=50, size=10, vjust=0.8),
+    legend.position = "none")
+```
+
+
+
+
+
+```{r}
+ggplot(df,
+       aes(x=max_heart_rate, y=cholesterol,color = thalassemia)) +
+  geom_point(alpha = 0.5, size = 3) +
+  facet_grid(.~ `Heart Disease`)+
+  theme_minimal()+ 
+  scale_color_brewer(palette="Dark2")+
+  labs(title = "Scatterplot of Heart Disease in Relation to\n Cholesterol, Chest Pain, Thalassemia",
+       x = "Max Heart Rate",
+       y = "Cholesterol")+
+  theme(plot.title = element_text(size=15, face="bold", 
+    margin = margin(10, 0, 10, 0)))
+```
+
+

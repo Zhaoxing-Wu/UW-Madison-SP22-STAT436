@@ -1,0 +1,78 @@
+---
+title: "Untitled"
+output: html_document
+---
+```{r}
+library(shiny)
+library(tidyverse)
+library(patchwork)
+```
+
+```{r}
+# https://www.kaggle.com/unsdsn/world-happiness?select=2015.csv
+df = read.csv("./archive/2015.csv")
+df$Region = as.factor(df$Region)
+df = df %>%
+  rename(`Happiness Score` = Happiness.Score,
+         `Life Expectancy` = Health..Life.Expectancy.,
+         `GDP per capita` = Economy..GDP.per.Capita.,
+         `Government Corruption` = Trust..Government.Corruption.)
+
+```
+
+```{r}
+scatter_fun <- function(df, colname) {
+  ggplot(df %>% filter(selected),
+              aes(`Happiness Score`, {{colname}})) +
+    geom_point(aes(col = Region), show.legend = FALSE)+
+    geom_smooth()+
+    theme_bw()
+}
+scatter_tot = function(df){
+  p1 = scatter_fun(df, `Life Expectancy`)
+  p2 = scatter_fun(df, `GDP per capita`)
+  p3 = scatter_fun(df, `Government Corruption`)
+  return (p1/p2/p3)
+}
+histogram_fun = function(df){
+  ggplot(df, aes(Region))+
+    geom_bar(aes(fill = Region))+
+    theme_bw()+
+    coord_flip()
+}
+region = pull(df, Region) %>%
+   unique() %>%
+   na.omit()
+```
+
+```{r}
+ui <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      titlePanel("2015 World Happiness Report"),
+      checkboxGroupInput("region", "Region", region, region),
+      sliderInput("score", "Happiness Score", 
+                  min = min(df$`Happiness Score`), 
+                  max = max(df$`Happiness Score`), c(2, 6))),
+    mainPanel(
+      plotOutput("histogram"), 
+      plotOutput("scatter")
+    )
+  )
+  
+  
+  )
+
+server <- function(input, output) {
+   df_subset <- reactive({
+     df %>%
+       mutate(selected = ((Region %in% input$region) &
+                            (`Happiness Score` >= input$score[1]) &
+                            (`Happiness Score` <= input$score[2])))
+   })
+   output$histogram <- renderPlot(histogram_fun(df_subset()))
+   output$scatter <- renderPlot(scatter_tot(df_subset()))
+ }
+
+shinyApp(ui, server)
+```
